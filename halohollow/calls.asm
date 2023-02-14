@@ -3,6 +3,7 @@
 	syscallAddr QWORD 0h
 
 .code
+	
 
 	GetSyscall proc
 					mov systemCall, cx
@@ -21,20 +22,13 @@
 					ret
 	myNtGetContextThread endp
 
-	myNtReadVirtualMemory proc
+	whatForeverMemory proc
 					mov r10, rcx
 					mov ax, systemCall
 					jmp	qword ptr syscallAddr
 					ret
-	myNtReadVirtualMemory endp
+	whatForeverMemory endp
 
 
-	myNtWriteVirtualMemory proc
-					mov r10, rcx
-					mov ax, systemCall
-					jmp	qword ptr syscallAddr
-					ret
-	myNtWriteVirtualMemory endp
-	
 
 end

